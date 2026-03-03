@@ -153,15 +153,23 @@ export default function App() {
       opponentName: 'Connecting...'
     }));
 
-    socket.emit('join-room', { roomId, playerName: name });
-
-    // Remove existing listeners to avoid duplication
+    // Register listeners BEFORE emitting join-room to avoid race conditions
     socket.off('room-update');
     socket.off('start-game');
     socket.off('opponent-move');
     socket.off('state-synced');
     socket.off('player-left');
     socket.off('error');
+    socket.off('connect');
+    socket.off('connect_error');
+
+    socket.on('connect', () => {
+      console.log("Connected to game server:", socket.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error("Connection error:", err);
+    });
 
     socket.on('room-update', ({ players }) => {
       const isHost = players[0].id === socket.id;
@@ -176,6 +184,8 @@ export default function App() {
         opponentName: opponent?.name || 'Waiting for friend...'
       }));
     });
+
+    socket.emit('join-room', { roomId, playerName: name });
 
     socket.on('start-game', ({ hostId }) => {
       const isHost = hostId === socket.id;
