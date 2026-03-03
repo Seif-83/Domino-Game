@@ -19,6 +19,8 @@ export type GameState = {
   round: number;
   consecutivePasses: number;
   lastWinner: 'player' | 'opponent' | 'draw' | null;
+  isConnected?: boolean;
+  connectionError?: string;
 };
 
 export const INITIAL_HAND_SIZE = 7;

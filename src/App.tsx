@@ -37,7 +37,8 @@ export default function App() {
     matchScore: { player: 0, opponent: 0 },
     round: 1,
     consecutivePasses: 0,
-    lastWinner: null
+    lastWinner: null,
+    isConnected: false
   });
 
   const [selectedDomino, setSelectedDomino] = useState<{ index: number, domino: Domino } | null>(null);
@@ -150,7 +151,9 @@ export default function App() {
       status: 'waiting',
       mode: 'PVP',
       roomId,
-      opponentName: 'Connecting...'
+      opponentName: 'Connecting...',
+      isConnected: false,
+      connectionError: undefined
     }));
 
     // Register listeners BEFORE emitting join-room to avoid race conditions
@@ -165,10 +168,16 @@ export default function App() {
 
     socket.on('connect', () => {
       console.log("Connected to game server:", socket.id);
+      setGameState(prev => ({ ...prev, isConnected: true, connectionError: undefined }));
     });
 
     socket.on('connect_error', (err) => {
       console.error("Connection error:", err);
+      setGameState(prev => ({
+        ...prev,
+        isConnected: false,
+        connectionError: "Cannot reach server. Note: Vercel does not support PVP servers."
+      }));
     });
 
     socket.on('room-update', ({ players }) => {
@@ -715,8 +724,20 @@ export default function App() {
             />
           </div>
 
-          <h2 className="text-2xl md:text-4xl font-display font-black text-white mb-2 md:mb-4">Waiting for Friend</h2>
-          <p className="text-stone-400 mb-8 md:mb-12 font-medium text-sm md:text-base">Share this code to start the match.</p>
+          <h2 className="text-2xl md:text-4xl font-display font-black text-white mb-2 md:mb-4">
+            {gameState.connectionError ? 'Server Error' : 'Waiting for Friend'}
+          </h2>
+          <p className={`mb-8 md:mb-12 font-medium text-sm md:text-base ${gameState.connectionError ? 'text-red-400' : 'text-stone-400'}`}>
+            {gameState.connectionError || 'Share this code to start the match.'}
+          </p>
+          {gameState.status === 'waiting' && (
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className={`w-2 h-2 rounded-full ${gameState.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                {gameState.isConnected ? 'Server Connected' : 'Disconnected'}
+              </span>
+            </div>
+          )}
 
           <div className="bg-black/60 rounded-2xl md:rounded-3xl p-4 md:p-8 mb-8 md:mb-12 flex items-center justify-between border border-white/5 group">
             <span className="text-3xl md:text-5xl font-display font-black tracking-[0.2em] text-white">{gameState.roomId}</span>
