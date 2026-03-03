@@ -13,7 +13,7 @@ const io = new Server(server, {
   }
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Game Rooms State
 interface Room {
@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
 
   socket.on("join-room", ({ roomId, playerName }) => {
     let room = rooms.get(roomId);
-    
+
     if (!room) {
       room = { id: roomId, players: [], gameState: null };
       rooms.set(roomId, room);
